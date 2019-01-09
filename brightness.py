@@ -25,8 +25,8 @@ class LOG_LEVELS(Enum):
 
 
 LOG_LEVEL = LOG_LEVELS.ALL
-GREY = Color(hex='')
-ORANGE = Color(hex='')
+GREY = Color('999999')
+ORANGE = Color('FFA500')
 
 def log(msg, level=LOG_LEVELS.ALL):
     if level < LOG_LEVEL:
@@ -45,7 +45,7 @@ def log(msg, level=LOG_LEVELS.ALL):
     else:
         return
 
-    print(col + msg + c.RST)
+    print(col.fg + msg + c.RT)
 
 
 def check_perms():
