@@ -5,6 +5,7 @@ from fullcolor.colors import Color
 from fullcolor.common import CommonColors as c
 from os import system, linesep, getuid
 from sys import argv
+from math import floor
 
 
 class LOG_LEVELS(Enum):
@@ -53,10 +54,11 @@ def check_perms():
         log('You are not a sudoer, try running again with root permissions.', LOG_LEVELS.DEBUG)
 
 
-def read_brightness(bright_file):
+def read_brightness(bright_file, maxbright=0):
     try:
         with open(bright_file, 'r') as bf:
-            return int(bf.readline())
+            rawbright = int(bf.readline())
+        return (rawbright / maxbright) if maxbright else rawbright
     except Exception as e:
         log(e.message, LOG_LEVELS.ERROR)
 
@@ -86,9 +88,17 @@ def consume_named(args, to_consume):
 def main():
     LOG_LEVEL = int(consume_named(argv, ['-l, --log-level']) or 0)
     bright_file = consume_named(argv, ['-f', '--file']) or '/sys/class/backlight/amdgpu_bl0/brightness'
+    maxbright_file = consume_named(argv, ['-m', '--max']) or '/sys/class/backlight/amdgpu_bl0/max_brightness'
+    maxbright = int(maxbright_file) if maxbright_file and maxbright_file.isdigit() else int(read_brightness(maxbright_file))
+
+    if has_arg(argv, ['get']):
+        print(floor(read_brightness(bright_file, maxbright) * 100))
+        return
+
     interval = int(consume_named(argv, ['-i', '--interval']) or 10)
-    change = interval if has_arg(argv, '+') else -1 * interval
-    new_brightness = read_brightness(bright_file) + change
+    change = (interval if has_arg(argv, '+') else -1 * interval) / 100
+    new_brightness = floor((read_brightness(bright_file, maxbright) + change) * maxbright)
+    
     log(f'Setting brightness to {new_brightness}', LOG_LEVELS.INFO)
     write_brightness(new_brightness, bright_file)
 
